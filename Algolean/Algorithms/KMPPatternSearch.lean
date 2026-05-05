@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Order.Group.Nat
 public import Mathlib.Data.List.Intervals
 public import Mathlib.Data.List.Infix
 public import Mathlib.Data.List.Range
--- Imported for PatternSearchAll, TODO: remove import after moving PatternSearchAll
 public import Algolean.Algorithms.NaivePatternSearch
 
 @[expose] public section
@@ -43,6 +42,8 @@ correctness and upper/lower bounds for equality comparisons in the `Comparison` 
   length `m + 3` and a text of length `n` on which `kmpPatternSearch` takes at least
   `2 * (txt.length + pat.length) - 5` comparisons.
 
+## TODO
+Remove `NaivePatternSearch` import after moving the `PatternSearchAll` definition.
 
 ## References
 1. [Knuth–Morris–Pratt algorithm](https://en.wikipedia.org/wiki/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm)
