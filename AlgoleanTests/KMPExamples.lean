@@ -11,7 +11,7 @@ public import Algolean.Algorithms.KMPPatternSearch
 @[expose] public section
 
 /-!
-# Examples
+# Examples for LPS and KMP
 
 This file contains some examples of KMP, including examples for `buildLPS` and `kmpPatternSearch`.
 -/
@@ -79,5 +79,77 @@ lemma random_LPS3 :
   rfl
 
 end LPSExamples
+
+section KMPExamples
+
+lemma empty_pattern_KMP [BEq α] (txt : List α) :
+    let pat := []
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = List.range txt.length := by
+  rfl
+
+lemma empty_text_KMP [BEq α] (pat : List α) :
+    let txt := []
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [] := by
+  cases pat with
+  | nil => rfl
+  | cons x xs => simp [kmpPatternSearch, kmpSearchLoop]
+
+lemma single_character_KMP [BEq α] [LawfulBEq α] (x : α) (n : Nat) :
+    let pat := [x]
+    let txt := List.replicate n x
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = List.range n := by
+  dsimp
+  rw [kmpPatternSearch_eval]
+  have hdrop : ∀ a < n, 1 ≤ n - a := by
+    intro a ha
+    exact Nat.succ_le_of_lt (Nat.sub_pos_of_lt ha)
+  simpa [PatternSearchAll] using hdrop
+
+lemma single_match_KMP :
+    let pat := [1, 0]
+    let txt := [0, 1, 1, 2, 3, 0, 0, 1, 0]
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [7] := by
+  rfl
+
+lemma double_match_KMP :
+    let pat := [1, 0]
+    let txt := [0, 1, 0, 2, 3, 0, 0, 1, 0]
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [1, 7] := by
+  rfl
+
+lemma overlapping_KMP1 :
+    let pat := [1, 1, 1]
+    let txt := [1, 1, 1, 1, 1, 1, 1]
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [0, 1, 2, 3, 4] := by
+  rfl
+
+lemma overlapping_KMP2 :
+    let pat := [1, 0, 1, 0]
+    let txt := [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [0, 2, 4, 6] := by
+  rfl
+
+lemma overlapping_KMP3 :
+    let pat := [1, 2, 3, 4, 7, 1, 2]
+    let txt := [3, 6, 1, 2, 3, 4, 7, 1, 2, 3, 4, 7, 1, 2]
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [2, 7] := by
+  rfl
+
+lemma overlapping_KMP4 :
+    let pat := [1, 0, 1]
+    let txt := [3, 1, 0, 1, 0, 1, 0, 3, 4]
+    let matchesFound := (kmpPatternSearch pat txt).eval Comparison.natCost
+    matchesFound = [1, 3] := by
+  rfl
+
+end KMPExamples
 
 end AlgoleanTests
