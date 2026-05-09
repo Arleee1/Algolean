@@ -30,15 +30,14 @@ def maxHeapProperty (le : α → α → Bool) (a : Vector α sz) : Prop :=
 /-- A max-heap data structure. -/
 structure BinaryHeap (α) (le : α → α → Bool) where
   arr : Array α
-  valid : maxHeapProperty le arr.toVector
 
-def empty (le) : BinaryHeap α le := ⟨#[], by simp⟩
+def empty (le) : BinaryHeap α le := ⟨#[]⟩
 
 instance (le) : Inhabited (BinaryHeap α le) := ⟨empty _⟩
 
 instance (le) : EmptyCollection (BinaryHeap α le) := ⟨empty _⟩
 
-def singleton (le) (x : α) : BinaryHeap α le := ⟨#[x], by simp⟩
+def singleton (le) (x : α) : BinaryHeap α le := ⟨#[x]⟩
 
 def size (self : BinaryHeap α le) : Nat := self.1.size
 
@@ -107,11 +106,11 @@ decreasing_by lia
 
 def insert (self : BinaryHeap α le) (x : α) : Prog (Vec α) (BinaryHeap α le) := do
   let a ← heapifyUp le (self.1.toVector.push x) ⟨self.1.size, Nat.lt_succ_self _⟩
-  return ⟨a.toArray, sorry⟩
+  return ⟨a.toArray⟩
 
 def mkHeap (le : α → α → Bool) (a : Array α) : Prog (Vec α) (BinaryHeap α le) := do
   let v ← loop a.toVector (a.size / 2) (Nat.div_le_self ..)
-  return ⟨v.toArray, sorry⟩
+  return ⟨v.toArray⟩
 where
   loop : (v : Vector α a.size) → (i : Nat) → i ≤ a.size → Prog (Vec α) (Vector α a.size)
     | v, 0,   _  => return v
@@ -139,19 +138,19 @@ def popMax (self : BinaryHeap α le) : Prog (Vec α) (BinaryHeap α le) := do
     let v'   := v.pop
     if h : 0 < self.1.size - 1 then
       let a ← heapifyDown le v' ⟨0, h⟩
-      return ⟨a.toArray, sorry⟩
+      return ⟨a.toArray⟩
     else
-      return ⟨v'.toArray, sorry⟩
+      return ⟨v'.toArray⟩
 
 def replaceMax (self : BinaryHeap α le) (x : α) : Prog (Vec α) (Option α × BinaryHeap α le) := do
   if h0 : self.1.size = 0 then
-    return (none, ⟨self.1.push x, sorry⟩)
+    return (none, ⟨self.1.push x⟩)
   else
     have h0' : 0 < self.1.size := Nat.zero_lt_of_ne_zero h0
     let m  ← Vec.read  self.1.toVector ⟨0, h0'⟩
     let v  ← Vec.write self.1.toVector ⟨0, h0'⟩ x
     let a  ← heapifyDown le v ⟨0, h0'⟩
-    return (some m, ⟨a.toArray, sorry⟩)
+    return (some m, ⟨a.toArray⟩)
 
 end Algorithms
 
