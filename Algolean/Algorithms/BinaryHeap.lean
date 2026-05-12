@@ -21,15 +21,20 @@ namespace Algolean
 
 namespace Algorithms
 
+/-- A max-heap data structure. -/
+structure BinaryHeap (α) (le : α → α → Bool) where
+  arr : Array α
+
+namespace BinaryHeap
+
 @[simp]
 def maxHeapProperty (le : α → α → Bool) (a : Vector α sz) : Prop :=
   ∀ (i : Fin sz),
     ((h: 2 * i.val + 1 < sz) → le a[2 * i.val + 1] a[i]) ∧
     ((h: 2 * i.val + 2 < sz) → le a[2 * i.val + 2] a[i])
 
-/-- A max-heap data structure. -/
-structure BinaryHeap (α) (le : α → α → Bool) where
-  arr : Array α
+def valid (self : BinaryHeap α le) : Prop :=
+  maxHeapProperty le self.arr.toVector
 
 def empty (le) : BinaryHeap α le := ⟨#[]⟩
 
@@ -151,6 +156,18 @@ def replaceMax (self : BinaryHeap α le) (x : α) : Prog (Vec α) (Option α × 
     let v  ← Vec.write self.1.toVector ⟨0, h0'⟩ x
     let a  ← heapifyDown le v ⟨0, h0'⟩
     return (some m, ⟨a.toArray⟩)
+
+section Correctness
+
+def insert_eval (self : BinaryHeap α le) (hvalid : self.valid) (x : α) :
+    let newHeap := (self.insert x).eval vecRWModel
+    let newElems := newHeap.arr.push x
+    newHeap.valid ∧ newHeap.arr.Perm newElems := by
+  sorry
+
+end Correctness
+
+end BinaryHeap
 
 end Algorithms
 
