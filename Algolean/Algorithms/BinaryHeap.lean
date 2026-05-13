@@ -120,7 +120,7 @@ lemma heapifyUp_restores_heap
                 simpa [hkparenti, hk_eq_p, p] using (parentIdx k hkpos).2
               have hplti : p.1 < i.1 := by
                 simpa [p] using (parentIdx i hpos).2
-              omega
+              lia
             have hi_ne_k_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
             have hp_ne_k_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
             have hle_child := hbelow hpos k hkpos hkparenti
@@ -136,7 +136,7 @@ lemma heapifyUp_restores_heap
               have hi_ne_p_val : i.1 ≠ p.1 := by
                 have hplti : p.1 < i.1 := by
                   simpa [p] using (parentIdx i hpos).2
-                omega
+                lia
               have hk_le_i := IsTrans.trans (r := fun x y => le x y = true)
                 a[k] a[p] a[i] hk_le_p hle
               simpa [b, p, Vector.getElem_set, Fin.ext_iff, hi_ne_k_val, hp_ne_k_val,
@@ -179,7 +179,7 @@ lemma heapifyUp_restores_heap
             have hplt : p.1 < k.1 := by
               simpa [hkparentp] using (parentIdx k hkpos).2
             have := congrArg Fin.val hkp
-            omega
+            lia
           have hk_old := hinv k hkpos hki
           have hk_le_p : le a[k] a[p] = true := by
             simpa [p, hkparentp] using hk_old
@@ -221,7 +221,7 @@ theorem insert_is_heap
   apply heapifyUp_restores_heap
   · intro k hkpos hkne
     have hkne' : k.1 ≠ sz := fun h => hkne (Fin.ext h)
-    have hklt : k.1 < sz := by omega
+    have hklt : k.1 < sz := by lia
     let hkold : Fin sz := ⟨k.1, hklt⟩
     have hkoldpos : hkold.1 > 0 := by
       simpa [hkold] using hkpos
@@ -233,7 +233,7 @@ theorem insert_is_heap
     exfalso
     have hlast_lt_k : sz < k.1 := by
       simpa [hkparent] using (parentIdx k hkpos).2
-    omega
+    lia
 
 end Correctness
 
