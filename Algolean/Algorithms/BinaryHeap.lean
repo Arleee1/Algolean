@@ -137,7 +137,7 @@ lemma heapifyUp_restores_heap
                 have hplti : p.1 < i.1 := by
                   simpa [p] using (parentIdx i hpos).2
                 lia
-              have hk_le_i := IsTrans.trans (r := fun x y => le x y = true)
+              have hk_le_i := IsTrans.trans (r := (le · ·))
                 a[k] a[p] a[i] hk_le_p hle
               simpa [b, p, Vector.getElem_set, Fin.ext_iff, hi_ne_k_val, hp_ne_k_val,
                 hi_ne_p_val, hkparentp] using hk_le_i
@@ -183,7 +183,7 @@ lemma heapifyUp_restores_heap
           have hk_old := hinv k hkpos hki
           have hk_le_p : le a[k] a[p] = true := by
             simpa [p, hkparentp] using hk_old
-          have hk_le_gp := IsTrans.trans (r := fun x y => le x y = true)
+          have hk_le_gp := IsTrans.trans (r := (le · ·))
             a[k] a[p] a[(parentIdx p hppos).1] hk_le_p hp_old
           have hi_ne_k_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
           have hp_ne_k_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
@@ -197,7 +197,7 @@ lemma heapifyUp_restores_heap
       simp only [maxHeapProperty, maxHeapPropertyPartial]
       intro k hkpos _
       by_cases hki : k = i
-      · rcases Std.Total.total (r := fun x y => le x y = true)
+      · rcases Std.Total.total (r := (le · ·))
           (a[k]) (a[(parentIdx k hkpos).1]) with h | h
         · exact h
         · exfalso
