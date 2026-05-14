@@ -174,16 +174,16 @@ theorem insert_is_heap
     (x : α) :
     let newHeap := (heap_insert le a x).eval vecRWModel
     maxHeapProperty le newHeap := by
-  dsimp [heap_insert]; rw [Prog.eval_bind]; simp only [Prog.eval_pure]
-  apply heapifyUp_restores_heap
-  · intro k hkpos hkne
-    have hkne' : k.1 ≠ sz := fun h => hkne (Fin.ext (by simp [h]))
-    have hklt : k.1 < sz := by lia
-    have hparentlt : (k.1 - 1) / 2 < sz := by lia
-    simpa [parentIdx, Vector.getElem_push_lt, hklt, hparentlt]
-      using hheap ⟨k.1, hklt⟩ (by lia : (⟨k.1, hklt⟩ : Fin sz).1 > 0) trivial
-  · intro hlastpos k hkpos hkparent
-    exact absurd (show sz < k.1 by simpa [hkparent] using (parentIdx k hkpos).2) (by lia)
+  simp only [heap_insert, FreeM.pure_eq_pure, Cslib.FreeM.bind_eq_bind,
+     Prog.eval_bind, Prog.eval_pure]
+  exact heapifyUp_restores_heap le (a.push x) ⟨sz, Nat.lt_succ_self _⟩
+    (fun k hkpos hkne => by
+      have hk : k.1 < sz := Nat.lt_of_le_of_ne (Nat.lt_succ_iff.mp k.2) (Fin.val_ne_of_ne hkne)
+      have hpar : (parentIdx k hkpos).1.1 < sz :=
+        Nat.lt_trans (Fin.lt_def.mp (parentIdx k hkpos).2) hk
+      simp only [Fin.getElem_fin, Vector.getElem_push_lt hk, Vector.getElem_push_lt hpar]
+      exact hheap ⟨k.1, hk⟩ hkpos trivial)
+    (by grind)
 
 end Correctness
 
