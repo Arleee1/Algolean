@@ -98,7 +98,6 @@ lemma heapifyUp_restores_heap
                FreeM.pure_bind, eval_liftBind, vecRWModel_evalQuery]
     split_ifs with hle
     · -- swap: a[parent] ← a[i], a[i] ← a[parent], recurse on parent
-      -- invariant case analysis: k=i uses totality, parent(k)=parent uses transitivity, else hinv
       let p := (parentIdx i hpos).1
       let b := (a.set p a[i]).set i a[p]
       have hpi : p.1 < i.1 := by simpa [p] using (parentIdx i hpos).2
@@ -106,108 +105,68 @@ lemma heapifyUp_restores_heap
       apply heapifyUp_restores_heap
       · intro k hkpos hkne
         by_cases hki : k = i
-        · have hp_ne_i_val : p.1 ≠ i.1 := by
-            exact Nat.ne_of_lt hpi
-          have hi_ne_parent_nat : i.1 ≠ (i.1 - 1) / 2 := by
-            exact Nat.ne_of_gt <| by
-              simpa [parentIdx] using (parentIdx i hpos).2
-          simpa [b, p, Vector.getElem_set, Fin.ext_iff, parentIdx, hki, hp_ne_i_val,
-            Ne.symm hp_ne_i_val, hi_ne_parent_nat] using hle
+        · have hp_ne_i : p.1 ≠ i.1 := Nat.ne_of_lt hpi
+          simpa [b, p, Vector.getElem_set, Fin.ext_iff, parentIdx, hki, hp_ne_i,
+            hp_ne_i.symm,
+            Nat.ne_of_gt (show i.1 > (i.1-1)/2 from
+              by simpa [parentIdx] using (parentIdx i hpos).2)]
+            using hle
         · by_cases hkparenti : (parentIdx k hkpos).1 = i
-          · have hk_ne_p : k ≠ p := by
-              intro hk_eq_p
-              have hlt : i.1 < p.1 := by
-                simpa [hkparenti, hk_eq_p, p] using (parentIdx k hkpos).2
-              have hplti : p.1 < i.1 := by
-                simpa [p] using (parentIdx i hpos).2
-              lia
-            have hi_ne_k_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-            have hp_ne_k_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
-            have hle_child := hbelow hpos k hkpos hkparenti
-            simpa [b, p, Vector.getElem_set, Fin.ext_iff, hi_ne_k_val, hp_ne_k_val,
-              hkparenti] using hle_child
+          · have hiltk : i.1 < k.1 := by simpa [hkparenti] using (parentIdx k hkpos).2
+            have hk_ne_i : i.1 ≠ k.1 := by lia
+            have hk_ne_p : p.1 ≠ k.1 := by lia
+            simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti, hk_ne_i, hk_ne_p]
+              using hbelow hpos k hkpos hkparenti
           · by_cases hkparentp : (parentIdx k hkpos).1 = p
-            · have hk_old := hinv k hkpos hki
-              have hk_le_p : le a[k] a[p] = true := by
-                simpa [p, hkparentp] using hk_old
-              have hk_ne_p : k ≠ p := hkne
-              have hi_ne_k_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-              have hp_ne_k_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
-              have hi_ne_p_val : i.1 ≠ p.1 := by
-                have hplti : p.1 < i.1 := by
-                  simpa [p] using (parentIdx i hpos).2
-                lia
-              have hk_le_i := IsTrans.trans (r := (le · ·))
-                a[k] a[p] a[i] hk_le_p hle
-              simpa [b, p, Vector.getElem_set, Fin.ext_iff, hi_ne_k_val, hp_ne_k_val,
-                hi_ne_p_val, hkparentp] using hk_le_i
-            · have hk_old := hinv k hkpos hki
-              have hk_ne_p : k ≠ p := hkne
-              have hi_ne_k_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-              have hp_ne_k_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
-              have hi_ne_parent_val : i.1 ≠ (parentIdx k hkpos).1.1 := fun h =>
-                hkparenti (Fin.ext h.symm)
-              have hp_ne_parent_val : p.1 ≠ (parentIdx k hkpos).1.1 := fun h =>
-                hkparentp (Fin.ext h.symm)
-              simpa [b, p, Vector.getElem_set, Fin.ext_iff, hi_ne_k_val, hp_ne_k_val,
-                hi_ne_parent_val, hp_ne_parent_val] using hk_old
+            · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
+              have hk_ne_i : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
+              have hk_ne_p : p.1 ≠ k.1 := fun h => hkne (Fin.ext h.symm)
+              simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparentp,
+                hk_ne_i, hk_ne_p, (Nat.ne_of_lt hpi).symm]
+                using IsTrans.trans (r := (le · ·))
+                  a[k] a[p] a[i] hk_le_p hle
+            · have hk_ne_i : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
+              have hk_ne_p : p.1 ≠ k.1 := fun h => hkne (Fin.ext h.symm)
+              have hpar_ne_i : i.1 ≠ (parentIdx k hkpos).1.1 :=
+                fun h => hkparenti (Fin.ext h.symm)
+              have hpar_ne_p : p.1 ≠ (parentIdx k hkpos).1.1 :=
+                fun h => hkparentp (Fin.ext h.symm)
+              simpa [b, p, Vector.getElem_set, Fin.ext_iff,
+                hk_ne_i, hk_ne_p, hpar_ne_i, hpar_ne_p] using hinv k hkpos hki
       · intro hppos k hkpos hkparentp
-        have hp_ne_i : p ≠ i := by
-          intro hpiEq
-          exact (Nat.ne_of_lt hpi) (congrArg Fin.val hpiEq)
-        have hgp_ne_i : (parentIdx p hppos).1 ≠ i := by
-          intro hgp
-          have hval : (parentIdx p hppos).1.1 = i.1 := congrArg Fin.val hgp
-          have hlt : i.1 < i.1 := by
-            simpa [hval] using Nat.lt_trans (parentIdx p hppos).2 hpi
-          exact Nat.lt_irrefl _ hlt
-        have hgp_ne_p : (parentIdx p hppos).1 ≠ p := by
-          intro hgp
-          have hval : (parentIdx p hppos).1.1 = p.1 := congrArg Fin.val hgp
-          have hneq : (parentIdx p hppos).1.1 ≠ p.1 := Nat.ne_of_lt (parentIdx p hppos).2
-          exact hneq hval
+        have hgp_lt_p := (parentIdx p hppos).2
+        have hp_ne_i : p ≠ i := Fin.ext_iff.not.mpr (by lia)
+        have hgp_ne_i : (parentIdx p hppos).1 ≠ i := Fin.ext_iff.not.mpr (by lia)
+        have hgp_ne_p : (parentIdx p hppos).1 ≠ p := Fin.ext_iff.not.mpr (by lia)
         have hp_old := hinv p hppos hp_ne_i
         by_cases hki : k = i
-        · have hi_ne_p_val : i.1 ≠ p.1 := fun h => hp_ne_i (Fin.ext h.symm)
-          have hi_ne_gp_val : i.1 ≠ (parentIdx p hppos).1.1 := fun h =>
-            hgp_ne_i (Fin.ext h.symm)
-          have hp_ne_gp_val : p.1 ≠ (parentIdx p hppos).1.1 := fun h =>
-            hgp_ne_p (Fin.ext h.symm)
-          simpa [b, p, hki, hi_ne_p_val, hi_ne_gp_val, hp_ne_gp_val] using hp_old
+        · simpa [b, p, hki, Vector.getElem_set, Fin.ext_iff,
+            Fin.val_ne_of_ne hp_ne_i.symm,
+            Fin.val_ne_of_ne hgp_ne_i.symm,
+            Fin.val_ne_of_ne hgp_ne_p.symm] using hp_old
         · have hk_ne_p : k ≠ p := by
-            intro hkp
-            have hplt : p.1 < k.1 := by
-              simpa [hkparentp] using (parentIdx k hkpos).2
-            have := congrArg Fin.val hkp
-            lia
-          have hk_old := hinv k hkpos hki
-          have hk_le_p : le a[k] a[p] = true := by
-            simpa [p, hkparentp] using hk_old
-          have hk_le_gp := IsTrans.trans (r := (le · ·))
-            a[k] a[p] a[(parentIdx p hppos).1] hk_le_p hp_old
-          have hi_ne_k_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-          have hp_ne_k_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
-          have hi_ne_gp_val : i.1 ≠ (parentIdx p hppos).1.1 := fun h =>
-            hgp_ne_i (Fin.ext h.symm)
-          have hp_ne_gp_val : p.1 ≠ (parentIdx p hppos).1.1 := fun h =>
-            hgp_ne_p (Fin.ext h.symm)
-          simpa [b, p, hi_ne_k_val, hp_ne_k_val, hi_ne_gp_val, hp_ne_gp_val]
-            using hk_le_gp
-    · -- no swap: array unchanged; le a[i] a[parent] follows from totality since ¬le a[parent] a[i]
-      simp only [maxHeapProperty, maxHeapPropertyPartial]
+            intro hkp; have := (parentIdx k hkpos).2; simp [hkparentp] at this; lia
+          have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
+          have hk_ne_i_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
+          have hk_ne_p_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
+          simpa [b, p, Vector.getElem_set, Fin.ext_iff,
+            hk_ne_i_val, hk_ne_p_val,
+            Fin.val_ne_of_ne hgp_ne_i.symm,
+            Fin.val_ne_of_ne hgp_ne_p.symm]
+            using IsTrans.trans (r := (le · ·))
+              a[k] a[p] a[(parentIdx p hppos).1] hk_le_p hp_old
+    · -- no swap: le a[i] a[parent] follows from totality
       intro k hkpos _
       by_cases hki : k = i
       · rcases Std.Total.total (r := (le · ·))
           (a[k]) (a[(parentIdx k hkpos).1]) with h | h
         · exact h
-        · exfalso
-          apply hle
-          simpa [hki, parentIdx] using h
+        · exact absurd (by simpa [hki, parentIdx] using h) hle
       · exact hinv k hkpos hki
-  · simp only [dif_neg hpos, maxHeapProperty, maxHeapPropertyPartial]
-    intro k hkpos _
-    apply hinv k hkpos
-    intro hki; subst hki; exact absurd hkpos hpos
+  · simp only [dif_neg hpos]
+    exact fun k hkpos _ => hinv k hkpos fun hki => absurd (hki ▸ hkpos) hpos
+termination_by i.1
+decreasing_by exact Fin.lt_def.mp (parentIdx i hpos).2
 
 theorem insert_is_heap
     (le : α → α → Bool) [Std.Total (le · ·)] [IsTrans _ (le · ·)]
@@ -215,25 +174,16 @@ theorem insert_is_heap
     (x : α) :
     let newHeap := (heap_insert le a x).eval vecRWModel
     maxHeapProperty le newHeap := by
-  dsimp [heap_insert]
-  rw [Prog.eval_bind]
-  simp only [Prog.eval_pure]
+  dsimp [heap_insert]; rw [Prog.eval_bind]; simp only [Prog.eval_pure]
   apply heapifyUp_restores_heap
   · intro k hkpos hkne
-    have hkne' : k.1 ≠ sz := fun h => hkne (Fin.ext h)
+    have hkne' : k.1 ≠ sz := fun h => hkne (Fin.ext (by simp [h]))
     have hklt : k.1 < sz := by lia
-    let hkold : Fin sz := ⟨k.1, hklt⟩
-    have hkoldpos : hkold.1 > 0 := by
-      simpa [hkold] using hkpos
-    have hheap' := hheap hkold hkoldpos trivial
-    have hparentlt' : (k.1 - 1) / 2 < sz := by
-      simpa [parentIdx] using Nat.lt_trans (parentIdx k hkpos).2 hklt
-    simpa [hkold, parentIdx, Vector.getElem_push_lt, hklt, hparentlt'] using hheap'
+    have hparentlt : (k.1 - 1) / 2 < sz := by lia
+    simpa [parentIdx, Vector.getElem_push_lt, hklt, hparentlt]
+      using hheap ⟨k.1, hklt⟩ (by lia : (⟨k.1, hklt⟩ : Fin sz).1 > 0) trivial
   · intro hlastpos k hkpos hkparent
-    exfalso
-    have hlast_lt_k : sz < k.1 := by
-      simpa [hkparent] using (parentIdx k hkpos).2
-    lia
+    exact absurd (show sz < k.1 by simpa [hkparent] using (parentIdx k hkpos).2) (by lia)
 
 end Correctness
 
