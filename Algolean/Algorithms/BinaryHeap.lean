@@ -95,7 +95,7 @@ lemma heapifyUp_restores_heap
   unfold heapifyUp
   split_ifs with hpos
   · simp only [FreeM.bind_eq_bind, FreeM.lift_def, FreeM.liftBind_bind,
-               FreeM.pure_bind, eval_liftBind, vecRWModel_evalQuery]
+      FreeM.pure_bind, eval_liftBind, vecRWModel_evalQuery]
     split_ifs with hle
     · -- swap: a[parent] ← a[i], a[i] ← a[parent], recurse on parent
       let p := (parentIdx i hpos).1
@@ -108,8 +108,8 @@ lemma heapifyUp_restores_heap
         · simp_all [b, p, Fin.ext_iff, parentIdx]
         · by_cases hkparenti : (parentIdx k hkpos).1 = i
           · have hiltk := Fin.lt_def.mp (hkparenti ▸ (parentIdx k hkpos).2)
-            simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti,
-                hiltk.ne, (Nat.lt_trans hpi hiltk).ne]
+            simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti, hiltk.ne,
+              (Nat.lt_trans hpi hiltk).ne]
               using hbelow hpos k hkpos hkparenti
           · by_cases hkparentp : (parentIdx k hkpos).1 = p
             · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
@@ -122,23 +122,12 @@ lemma heapifyUp_restores_heap
                 (Fin.val_ne_of_ne hkparenti).symm, (Fin.val_ne_of_ne hkparentp).symm]
                 using hinv k hkpos hki
       · intro hppos k hkpos hkparentp
-        have hp_ne_i := (Fin.lt_def.mpr hpi).ne
-        have hgp_ne_i := (lt_trans (parentIdx p hppos).2 (Fin.lt_def.mpr hpi)).ne
-        have hgp_ne_p := (parentIdx p hppos).2.ne
-        have hp_old := hinv p hppos hp_ne_i
+        have hp_old := hinv p hppos (Fin.lt_def.mpr hpi).ne
         by_cases hki : k = i
-        · simpa [b, p, hki, Vector.getElem_set, Fin.ext_iff,
-            Fin.val_ne_of_ne hp_ne_i.symm,
-            Fin.val_ne_of_ne hgp_ne_i.symm,
-            Fin.val_ne_of_ne hgp_ne_p.symm] using hp_old
-        · have hk_ne_p : k ≠ p := (hkparentp ▸ (parentIdx k hkpos).2).ne'
-          have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
-          simpa [b, p, Vector.getElem_set, Fin.ext_iff,
-            (Fin.val_ne_of_ne hki).symm, (Fin.val_ne_of_ne hk_ne_p).symm,
-            Fin.val_ne_of_ne hgp_ne_i.symm,
-            Fin.val_ne_of_ne hgp_ne_p.symm]
-            using IsTrans.trans (r := (le · ·))
-              a[k] a[p] a[(parentIdx p hppos).1] hk_le_p hp_old
+        · grind
+        · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
+          have := IsTrans.trans (r := (le · ·)) a[k] a[p] a[(parentIdx p hppos).1] hk_le_p hp_old
+          grind
     · -- no swap: le a[i] a[parent] follows from totality
       intro k hkpos _
       by_cases hki : k = i
