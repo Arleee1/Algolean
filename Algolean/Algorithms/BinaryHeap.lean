@@ -93,14 +93,14 @@ lemma heapifyUp_restores_heap
       (parentIdx k hkpos).1 = i → le a[k] a[(parentIdx i hpos).1]) :
     maxHeapProperty le ((heapifyUp le a i).eval vecRWModel) := by
   unfold heapifyUp
-  by_cases hpos : i.1 > 0
-  · simp only [dif_pos hpos, FreeM.bind_eq_bind, FreeM.lift_def, FreeM.liftBind_bind,
+  split_ifs with hpos
+  · simp only [FreeM.bind_eq_bind, FreeM.lift_def, FreeM.liftBind_bind,
                FreeM.pure_bind, eval_liftBind, vecRWModel_evalQuery]
     split_ifs with hle
     · -- swap: a[parent] ← a[i], a[i] ← a[parent], recurse on parent
       let p := (parentIdx i hpos).1
       let b := (a.set p a[i]).set i a[p]
-      have hpi : p.1 < i.1 := by simpa [p] using (parentIdx i hpos).2
+      have hpi : p.1 < i.1 := Fin.lt_def.mp (parentIdx i hpos).2
       change maxHeapProperty le ((heapifyUp le b p).eval vecRWModel)
       apply heapifyUp_restores_heap
       · intro k hkpos hkne
@@ -112,45 +112,34 @@ lemma heapifyUp_restores_heap
               by simpa [parentIdx] using (parentIdx i hpos).2)]
             using hle
         · by_cases hkparenti : (parentIdx k hkpos).1 = i
-          · have hiltk : i.1 < k.1 := by simpa [hkparenti] using (parentIdx k hkpos).2
-            have hk_ne_i : i.1 ≠ k.1 := by lia
-            have hk_ne_p : p.1 ≠ k.1 := by lia
-            simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti, hk_ne_i, hk_ne_p]
+          · have hiltk := Fin.lt_def.mp (hkparenti ▸ (parentIdx k hkpos).2)
+            simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti,
+                hiltk.ne, (Nat.lt_trans hpi hiltk).ne]
               using hbelow hpos k hkpos hkparenti
           · by_cases hkparentp : (parentIdx k hkpos).1 = p
             · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
-              have hk_ne_i : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-              have hk_ne_p : p.1 ≠ k.1 := fun h => hkne (Fin.ext h.symm)
               simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparentp,
-                hk_ne_i, hk_ne_p, (Nat.ne_of_lt hpi).symm]
-                using IsTrans.trans (r := (le · ·))
-                  a[k] a[p] a[i] hk_le_p hle
-            · have hk_ne_i : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-              have hk_ne_p : p.1 ≠ k.1 := fun h => hkne (Fin.ext h.symm)
-              have hpar_ne_i : i.1 ≠ (parentIdx k hkpos).1.1 :=
-                fun h => hkparenti (Fin.ext h.symm)
-              have hpar_ne_p : p.1 ≠ (parentIdx k hkpos).1.1 :=
-                fun h => hkparentp (Fin.ext h.symm)
-              simpa [b, p, Vector.getElem_set, Fin.ext_iff,
-                hk_ne_i, hk_ne_p, hpar_ne_i, hpar_ne_p] using hinv k hkpos hki
+                (Fin.val_ne_of_ne hki).symm, (Fin.val_ne_of_ne hkne).symm,
+                (Nat.ne_of_lt hpi).symm]
+                using IsTrans.trans (r := (le · ·)) a[k] a[p] a[i] hk_le_p hle
+            · simpa [b, p, Vector.getElem_set, Fin.ext_iff,
+                (Fin.val_ne_of_ne hki).symm, (Fin.val_ne_of_ne hkne).symm,
+                (Fin.val_ne_of_ne hkparenti).symm, (Fin.val_ne_of_ne hkparentp).symm]
+                using hinv k hkpos hki
       · intro hppos k hkpos hkparentp
-        have hgp_lt_p := (parentIdx p hppos).2
-        have hp_ne_i : p ≠ i := Fin.ext_iff.not.mpr (by lia)
-        have hgp_ne_i : (parentIdx p hppos).1 ≠ i := Fin.ext_iff.not.mpr (by lia)
-        have hgp_ne_p : (parentIdx p hppos).1 ≠ p := Fin.ext_iff.not.mpr (by lia)
+        have hp_ne_i := (Fin.lt_def.mpr hpi).ne
+        have hgp_ne_i := (lt_trans (parentIdx p hppos).2 (Fin.lt_def.mpr hpi)).ne
+        have hgp_ne_p := (parentIdx p hppos).2.ne
         have hp_old := hinv p hppos hp_ne_i
         by_cases hki : k = i
         · simpa [b, p, hki, Vector.getElem_set, Fin.ext_iff,
             Fin.val_ne_of_ne hp_ne_i.symm,
             Fin.val_ne_of_ne hgp_ne_i.symm,
             Fin.val_ne_of_ne hgp_ne_p.symm] using hp_old
-        · have hk_ne_p : k ≠ p := by
-            intro hkp; have := (parentIdx k hkpos).2; simp [hkparentp] at this; lia
+        · have hk_ne_p : k ≠ p := (hkparentp ▸ (parentIdx k hkpos).2).ne'
           have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
-          have hk_ne_i_val : i.1 ≠ k.1 := fun h => hki (Fin.ext h.symm)
-          have hk_ne_p_val : p.1 ≠ k.1 := fun h => hk_ne_p (Fin.ext h.symm)
           simpa [b, p, Vector.getElem_set, Fin.ext_iff,
-            hk_ne_i_val, hk_ne_p_val,
+            (Fin.val_ne_of_ne hki).symm, (Fin.val_ne_of_ne hk_ne_p).symm,
             Fin.val_ne_of_ne hgp_ne_i.symm,
             Fin.val_ne_of_ne hgp_ne_p.symm]
             using IsTrans.trans (r := (le · ·))
@@ -163,8 +152,7 @@ lemma heapifyUp_restores_heap
         · exact h
         · exact absurd (by simpa [hki, parentIdx] using h) hle
       · exact hinv k hkpos hki
-  · simp only [dif_neg hpos]
-    exact fun k hkpos _ => hinv k hkpos fun hki => absurd (hki ▸ hkpos) hpos
+  · exact fun k hkpos _ => hinv k hkpos fun hki => absurd (hki ▸ hkpos) hpos
 termination_by i.1
 decreasing_by exact Fin.lt_def.mp (parentIdx i hpos).2
 
@@ -177,12 +165,13 @@ theorem insert_is_heap
   simp only [heap_insert, FreeM.pure_eq_pure, Cslib.FreeM.bind_eq_bind,
      Prog.eval_bind, Prog.eval_pure]
   exact heapifyUp_restores_heap le (a.push x) ⟨sz, Nat.lt_succ_self _⟩
-    (fun k hkpos hkne => by
-      have hk : k.1 < sz := Nat.lt_of_le_of_ne (Nat.lt_succ_iff.mp k.2) (Fin.val_ne_of_ne hkne)
-      have hpar : (parentIdx k hkpos).1.1 < sz :=
-        Nat.lt_trans (Fin.lt_def.mp (parentIdx k hkpos).2) hk
-      simp only [Fin.getElem_fin, Vector.getElem_push_lt hk, Vector.getElem_push_lt hpar]
-      exact hheap ⟨k.1, hk⟩ hkpos trivial)
+    (by
+      intro i hpos hne
+      have hi_lt : i.1 < sz := Nat.lt_of_le_of_ne (Nat.lt_succ_iff.mp i.2) fun h => hne (Fin.ext h)
+      have hpar_lt : (parentIdx i hpos).1.1 < sz :=
+        Nat.lt_trans (Fin.lt_def.mp (parentIdx i hpos).2) hi_lt
+      simp only [Fin.getElem_fin, Vector.getElem_push_lt hi_lt, Vector.getElem_push_lt hpar_lt]
+      exact hheap ⟨i.1, hi_lt⟩ hpos trivial)
     (by grind)
 
 end Correctness
