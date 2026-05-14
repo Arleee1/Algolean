@@ -111,16 +111,14 @@ lemma heapifyUp_restores_heap
             simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti, hiltk.ne,
               (Nat.lt_trans hpi hiltk).ne]
               using hbelow hpos k hkpos hkparenti
-          · by_cases hkparentp : (parentIdx k hkpos).1 = p
+          · have hki_ne := (Fin.val_ne_of_ne hki)
+            have hkne_ne := (Fin.val_ne_of_ne hkne)
+            by_cases hkparentp : (parentIdx k hkpos).1 = p
             · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
-              simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparentp,
-                (Fin.val_ne_of_ne hki).symm, (Fin.val_ne_of_ne hkne).symm,
-                (Nat.ne_of_lt hpi).symm]
+              simpa [b, p, hkparentp, hki_ne, hkne_ne, (Nat.ne_of_lt hpi), Ne.symm]
                 using IsTrans.trans (r := (le · ·)) a[k] a[p] a[i] hk_le_p hle
-            · simpa [b, p, Vector.getElem_set, Fin.ext_iff,
-                (Fin.val_ne_of_ne hki).symm, (Fin.val_ne_of_ne hkne).symm,
-                (Fin.val_ne_of_ne hkparenti).symm, (Fin.val_ne_of_ne hkparentp).symm]
-                using hinv k hkpos hki
+            · simpa [b, p, hki_ne, hkne_ne, (Fin.val_ne_of_ne hkparenti),
+                (Fin.val_ne_of_ne hkparentp), Ne.symm] using hinv k hkpos hki
       · intro hppos k hkpos hkparentp
         have hp_old := hinv p hppos (Fin.lt_def.mpr hpi).ne
         by_cases hki : k = i
