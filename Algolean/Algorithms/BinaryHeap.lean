@@ -105,12 +105,7 @@ lemma heapifyUp_restores_heap
       apply heapifyUp_restores_heap
       · intro k hkpos hkne
         by_cases hki : k = i
-        · have hp_ne_i : p.1 ≠ i.1 := Nat.ne_of_lt hpi
-          simpa [b, p, Vector.getElem_set, Fin.ext_iff, parentIdx, hki, hp_ne_i,
-            hp_ne_i.symm,
-            Nat.ne_of_gt (show i.1 > (i.1-1)/2 from
-              by simpa [parentIdx] using (parentIdx i hpos).2)]
-            using hle
+        · simp_all [b, p, Fin.ext_iff, parentIdx]
         · by_cases hkparenti : (parentIdx k hkpos).1 = i
           · have hiltk := Fin.lt_def.mp (hkparenti ▸ (parentIdx k hkpos).2)
             simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti,
