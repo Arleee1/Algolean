@@ -83,6 +83,17 @@ def heapifyDown (le : α → α → Bool) (a : Vector α sz) (i : Fin sz) :
 termination_by sz - i.1
 decreasing_by lia
 
+def heap_remove_max (le : α → α → Bool) (a : Vector α sz) (hpos : sz > 0) :
+    Prog (Vec α) (Vector α (sz-1)) := do
+  if hlen : sz > 1 then
+    let last : α ← Vec.read a ⟨sz-1, by lia⟩
+    let a := a.pop
+    let idxZero : Fin (sz-1) := ⟨0, by lia⟩
+    let a : Vector α (sz-1) ← Vec.write a idxZero last
+    heapifyDown le a idxZero
+  else
+    return (⟨#[], by grind⟩ : Vector α (sz-1))
+
 section Correctness
 
 open Cslib Prog
