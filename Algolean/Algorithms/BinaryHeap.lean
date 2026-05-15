@@ -76,12 +76,6 @@ section Correctness
 
 open Cslib Prog
 
-/-- `j` is `i` or an ancestor of `i` in the heap tree -/
-inductive AncestorOrSelf : Fin sz → Fin sz → Prop where
-  | refl (i : Fin sz) : AncestorOrSelf i i
-  | step (i : Fin sz) (hpos : i.1 > 0) :
-      AncestorOrSelf j (parentIdx i hpos).1 → AncestorOrSelf j i
-
 /-- If `a` satisfies the max-heap property everywhere except possibly at `i`,
     and the children of `i` are bounded by its parent whenever `i` has a parent,
     then `heapifyUp` restores the full max-heap property. -/
@@ -155,6 +149,29 @@ theorem insert_is_heap
       simp only [Fin.getElem_fin, Vector.getElem_push_lt hi_lt, Vector.getElem_push_lt hpar_lt]
       exact hheap ⟨i.1, hi_lt⟩ hpos trivial)
     (by grind)
+
+lemma heapifyUp_is_permutation (le : α → α → Bool) (a : Vector α sz) (i : Fin sz) :
+    List.Perm ((heapifyUp le a i).eval vecRWModel).toList a.toList := by
+  unfold heapifyUp
+  split_ifs with hpos
+  · simp only [FreeM.bind_eq_bind, FreeM.lift_def, FreeM.liftBind_bind,
+               FreeM.pure_bind, eval_liftBind, vecRWModel_evalQuery]
+    split_ifs with hle
+    · let p := (parentIdx i hpos).1
+      let b := (a.set p a[i]).set i a[p]
+      change List.Perm ((heapifyUp le b p).eval vecRWModel).toList a.toList
+      exact (heapifyUp_is_permutation le b p).trans
+        (show List.Perm b.toList a.toList from (Vector.swap_perm p.2 i.2).toList)
+    · exact List.Perm.refl _
+  · exact List.Perm.refl _
+termination_by i.1
+decreasing_by exact Fin.lt_def.mp (parentIdx i hpos).2
+
+theorem heap_insert_is_permutation (le : α → α → Bool) (a : Vector α sz) (x : α) :
+    let newHeap := (heap_insert le a x).eval vecRWModel
+    List.Perm newHeap.toList (a.toList ++ [x]) := by
+  simpa [Vector.toList_push, heap_insert] using
+    heapifyUp_is_permutation le (a.push x) ⟨sz, Nat.lt_succ_self _⟩
 
 end Correctness
 
