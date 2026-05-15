@@ -133,16 +133,13 @@ theorem insert_is_heap
     (x : α) :
     let newHeap := (heap_insert le a x).eval vecRWModel
     maxHeapProperty le newHeap := by
-  simp only [heap_insert, FreeM.pure_eq_pure, Cslib.FreeM.bind_eq_bind,
-     Prog.eval_bind, Prog.eval_pure]
+  simp only [heap_insert, FreeM.pure_eq_pure, FreeM.bind_eq_bind, eval_bind, eval_pure]
   exact heapifyUp_restores_heap le (a.push x) ⟨sz, Nat.lt_succ_self _⟩
-    (by
-      intro i hpos hne
-      have hi_lt : i.1 < sz := Nat.lt_of_le_of_ne (Nat.lt_succ_iff.mp i.2) fun h => hne (Fin.ext h)
-      have hpar_lt : (parentIdx i hpos).1.1 < sz :=
-        Nat.lt_trans (Fin.lt_def.mp (parentIdx i hpos).2) hi_lt
-      simp only [Fin.getElem_fin, Vector.getElem_push_lt hi_lt, Vector.getElem_push_lt hpar_lt]
-      exact hheap ⟨i.1, hi_lt⟩ hpos trivial)
+    (fun i hpos hne => by
+      have hi := Nat.lt_of_le_of_ne (Nat.lt_succ_iff.mp i.2) fun h => hne (Fin.ext h)
+      have hp := Nat.lt_trans (Fin.lt_def.mp (parentIdx i hpos).2) hi
+      simp only [Fin.getElem_fin, Vector.getElem_push_lt hi, Vector.getElem_push_lt hp]
+      exact hheap ⟨i.1, hi⟩ hpos trivial)
     (by grind)
 
 lemma heapifyUp_is_permutation (le : α → α → Bool) (a : Vector α sz) (i : Fin sz) :
