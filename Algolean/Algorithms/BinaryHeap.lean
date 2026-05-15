@@ -89,10 +89,10 @@ lemma heapifyUp_restores_heap
     maxHeapProperty le ((heapifyUp le a i).eval vecRWModel) := by
   unfold heapifyUp
   split_ifs with hpos
-  · simp only [FreeM.bind_eq_bind, FreeM.lift_def, FreeM.liftBind_bind,
-      FreeM.pure_bind, eval_liftBind, vecRWModel_evalQuery]
+  · simp only [FreeM.bind_eq_bind, FreeM.lift_def, FreeM.liftBind_bind, FreeM.pure_bind,
+      eval_liftBind, vecRWModel_evalQuery]
     split_ifs with hle
-    · -- swap: a[parent] ← a[i], a[i] ← a[parent], recurse on parent
+    · -- swap case: recurse on parent
       let p := (parentIdx i hpos).1
       let b := (a.set p a[i]).set i a[p]
       have hpi : p.1 < i.1 := Fin.lt_def.mp (parentIdx i hpos).2
@@ -104,31 +104,25 @@ lemma heapifyUp_restores_heap
         · by_cases hkparenti : (parentIdx k hkpos).1 = i
           · have hiltk := Fin.lt_def.mp (hkparenti ▸ (parentIdx k hkpos).2)
             simpa [b, p, Vector.getElem_set, Fin.ext_iff, hkparenti, hiltk.ne,
-              (Nat.lt_trans hpi hiltk).ne]
-              using hbelow hpos k hkpos hkparenti
-          · have hki_ne := (Fin.val_ne_of_ne hki)
-            have hkne_ne := (Fin.val_ne_of_ne hkne)
+              (Nat.lt_trans hpi hiltk).ne] using hbelow hpos k hkpos hkparenti
+          · have hk_inv := hinv k hkpos hki
             by_cases hkparentp : (parentIdx k hkpos).1 = p
-            · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
-              simpa [b, p, hkparentp, hki_ne, hkne_ne, (Nat.ne_of_lt hpi), Ne.symm]
-                using IsTrans.trans (r := (le · ·)) a[k] a[p] a[i] hk_le_p hle
-            · simpa [b, p, hki_ne, hkne_ne, (Fin.val_ne_of_ne hkparenti),
-                (Fin.val_ne_of_ne hkparentp), Ne.symm] using hinv k hkpos hki
+            · have := IsTrans.trans (r := (le · ·)) a[k] a[p] a[i]
+                (by simpa [p, hkparentp] using hk_inv) hle
+              simp_all [b, p, Fin.ext_iff, Nat.ne_of_lt hpi, Ne.symm]
+            · simp_all [b, p, Fin.ext_iff, Fin.val_ne_of_ne hkparenti,
+                Fin.val_ne_of_ne hkparentp, Ne.symm]
       · intro hppos k hkpos hkparentp
-        have hp_old := hinv p hppos (Fin.lt_def.mpr hpi).ne
-        by_cases hki : k = i
-        · grind
-        · have hk_le_p : le a[k] a[p] := by simpa [p, hkparentp] using hinv k hkpos hki
-          have := IsTrans.trans (r := (le · ·)) a[k] a[p] a[(parentIdx p hppos).1] hk_le_p hp_old
+        have := hinv p hppos (Fin.lt_def.mpr hpi).ne
+        by_cases hki : k = i <;>
+        · try (have := IsTrans.trans (r := (le · ·)) a[k] a[p] a[(parentIdx p hppos).1]
+                (by simpa [p, hkparentp] using hinv k hkpos hki) ‹_›)
           grind
-    · -- no swap: le a[i] a[parent] follows from totality
-      intro k hkpos _
-      by_cases hki : k = i
-      · rcases Std.Total.total (r := (le · ·))
-          (a[k]) (a[(parentIdx k hkpos).1]) with h | h
-        · exact h
-        · exact absurd (by simpa [hki, parentIdx] using h) hle
-      · exact hinv k hkpos hki
+    · intro k hkpos _
+      if hki : k = i then
+        exact (Std.Total.total (r := (le · ·)) a[k] a[(parentIdx k hkpos).1]).elim id
+          fun h => absurd (by simpa [hki, parentIdx] using h) hle
+      else exact hinv k hkpos hki
   · exact fun k hkpos _ => hinv k hkpos fun hki => absurd (hki ▸ hkpos) hpos
 termination_by i.1
 decreasing_by exact Fin.lt_def.mp (parentIdx i hpos).2
