@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2021 Mario Carneiro. All rights reserved.
+Copyright (c) 2026 Ethan Ermovick. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Mario Carneiro, François G. Dorais, Ethan Ermovick
+Authors: Ethan Ermovick
 -/
 module
 
@@ -12,6 +12,7 @@ public import Algolean.Models.ReadWriteVec
 /-!
 # Binary Heap
 
+Heap implementation (not theorems) were inspired by [Batteries].
 
 ## References
 1. [Batteries](https://github.com/leanprover-community/batteries)
