@@ -32,25 +32,6 @@ def maxHeapPropertyPartial (le : α → α → Bool) (a : Vector α sz) (p : Fin
 def maxHeapProperty (le : α → α → Bool) (a : Vector α sz) : Prop :=
   maxHeapPropertyPartial le a fun _ => True
 
-/-- Find the index of the larger child of node `i`, logging reads of both children. -/
-def maxChildIdx (le : α → α → Bool) (a : Vector α sz) (i : Fin sz) :
-    Prog (Vec α) (Option { j : Fin sz // i < j }) := do
-  let left := 2 * i.1 + 1
-  let right := left + 1
-  let child (k : Nat) (hk : k < sz) (hlt : i.1 < k) : Option { j : Fin sz // i < j } :=
-    some ⟨⟨k, hk⟩, Fin.lt_def.2 hlt⟩
-  if hleft : left < sz then
-    if hright : right < sz then
-      let al ← Vec.read a ⟨left, hleft⟩
-      let ar ← Vec.read a ⟨right, hright⟩
-      if le al ar then
-        return child right hright (by lia)
-      else
-        return child left hleft (by lia)
-    else
-      return child left hleft (by lia)
-  else return none
-
 /-- Push element at `i` up to restore the max-heap property, logging all reads and writes. -/
 def heapifyUp (le : α → α → Bool) (a : Vector α sz) (i : Fin sz) :
     Prog (Vec α) (Vector α sz) := do
@@ -72,6 +53,35 @@ def heap_insert (le : α → α → Bool) (a : Vector α sz) (x : α) :
   -- TODO: How to count the push?
   let a ← heapifyUp le (a.push x) ⟨a.size, Nat.lt_succ_self _⟩
   return a
+
+/-- Push element at `i` down to restore the max-heap property, logging all reads and writes. -/
+def heapifyDown (le : α → α → Bool) (a : Vector α sz) (i : Fin sz) :
+    Prog (Vec α) (Vector α sz) := do
+  let leftIdx := 2 * i.1 + 1
+  if hleft : leftIdx < sz then
+    let left : α ← Vec.read a ⟨leftIdx, hleft⟩
+    let rightIdx := leftIdx + 1
+    have hleftBound : i.1 < leftIdx := by lia
+    let boundedIndex := { j : Fin sz // i.1 < j.1 }
+    let maxChild : α × boundedIndex ← if hright : rightIdx < sz then do
+        let right : α ← Vec.read a ⟨rightIdx, hright⟩
+        let maxChildPair := if le left right
+              then (right, (⟨Fin.mk rightIdx hright, by lia⟩ : boundedIndex))
+              else (left, (⟨Fin.mk leftIdx hleft, hleftBound⟩ : boundedIndex))
+        pure maxChildPair
+      else
+        pure (left, (⟨Fin.mk leftIdx hleft, hleftBound⟩ : boundedIndex))
+    let curr : α ← Vec.read a i
+    if le curr maxChild.1 then
+      let a ← Vec.write a i maxChild.1
+      let a ← Vec.write a maxChild.2.1 curr
+      heapifyDown le a maxChild.2.1
+    else
+      return a
+  else
+    return a
+termination_by sz - i.1
+decreasing_by lia
 
 section Correctness
 
